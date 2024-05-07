@@ -124,7 +124,7 @@
             cardContainer.addEventListener('click', function() {
                 if (selectedCards.includes(cardContainer)) {
                     selectedCards = selectedCards.filter(selected => selected !== cardContainer);
-                    cardContainer.style.border = '1px solid black';
+                    cardContainer.style.border = '2px solid black';
                 } else {
                     selectedCards.push(cardContainer);
                     cardContainer.style.border = '2px solid red';
