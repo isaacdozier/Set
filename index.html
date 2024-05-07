@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set Game</title>
+<style>
+    body, html {
+        height: 100%;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    #game {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+    .card {
+        border: 1px solid black;
+        width: 100px;
+        height: 150px;
+        cursor: pointer;
+    }
+    #score {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        font-size: 16px;
+    }
+</style>
+</head>
+<body>
+<div id="score">Deck: <span id="deckCount"></span> Found: <span id="foundSets">0</span></div>
+<div id="game"></div>
+<script>
+    const colors = ['#ff0000', '#00ff00', '#0000ff'];
+    const shapes = ['circle', 'triangle', 'square'];
+    const numbers = [1, 2, 3];
+
+    let deck = [];
+    let foundSets = 0;
+    let selectedCards = [];
+
+    function generateDeck() {
+        const deck = [];
+        for (let i = 0; i < 64; i++) {
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
+            const randomNumber = numbers[Math.floor(Math.random() * numbers.length)];
+            deck.push({ color: randomColor, shape: randomShape, number: randomNumber });
+        }
+        return deck;
+    }
+
+    function drawCard(canvas, color, shape, number) {
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw shapes
+        ctx.fillStyle = color;
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        if (number === 1) {
+            // Draw a single shape in the center
+            drawShape(ctx, centerX, centerY, shape);
+        } else {
+            // Draw shapes in a circle
+            const radius = Math.min(width, height) / 4;
+            const angleStep = 2 * Math.PI / number;
+
+            for (let i = 0; i < number; i++) {
+                const angle = i * angleStep;
+                const shapeX = centerX + radius * Math.cos(angle);
+                const shapeY = centerY + radius * Math.sin(angle);
+                drawShape(ctx, shapeX, shapeY, shape);
+            }
+        }
+    }
+
+    function drawShape(ctx, x, y, shape) {
+        switch (shape) {
+            case 'circle':
+                ctx.beginPath();
+                ctx.arc(x, y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+            case 'triangle':
+                ctx.beginPath();
+                ctx.moveTo(x, y - 10);
+                ctx.lineTo(x - 10, y + 10);
+                ctx.lineTo(x + 10, y + 10);
+                ctx.closePath();
+                ctx.fill();
+                break;
+            case 'square':
+                ctx.fillRect(x - 10, y - 10, 20, 20);
+                break;
+        }
+    }
+
+    function refillBoard() {
+        const gameBoard = document.getElementById('game');
+        gameBoard.innerHTML = '';
+
+        for (let i = 0; i < 9; i++) {
+            const cardContainer = document.createElement('div');
+            cardContainer.classList.add('card');
+            gameBoard.appendChild(cardContainer);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 100;
+            canvas.height = 150;
+            cardContainer.appendChild(canvas);
+
+            const card = deck.pop();
+            drawCard(canvas, card.color, card.shape, card.number);
+
+            cardContainer.addEventListener('click', function() {
+                if (selectedCards.includes(cardContainer)) {
+                    selectedCards = selectedCards.filter(selected => selected !== cardContainer);
+                    cardContainer.style.border = '1px solid black';
+                } else {
+                    selectedCards.push(cardContainer);
+                    cardContainer.style.border = '2px solid red';
+
+                    if (selectedCards.length === 3) {
+                        checkSet();
+                    }
+                }
+            });
+        }
+    }
+
+    function checkSet() {
+        const cards = selectedCards.map(container => container.firstChild);
+        const colors = new Set();
+        const shapes = new Set();
+        const numbers = new Set();
+
+        cards.forEach(canvas => {
+            const ctx = canvas.getContext('2d');
+            const color = ctx.fillStyle;
+            const shape = canvas.getAttribute('data-shape');
+            const number = parseInt(canvas.getAttribute('data-number'));
+
+            colors.add(color);
+            shapes.add(shape);
+            numbers.add(number);
+        });
+
+        if (colors.size !== 2 && shapes.size !== 2 && numbers.size !== 2) {
+            foundSets++;
+            document.getElementById('foundSets').textContent = foundSets;
+            refillBoard();
+        }
+
+        selectedCards.forEach(container => container.style.border = '1px solid black');
+        selectedCards = [];
+    }
+
+    deck = generateDeck();
+    document.getElementById('deckCount').textContent = deck.length;
+    refillBoard();
+</script>
+</body>
+</html>
